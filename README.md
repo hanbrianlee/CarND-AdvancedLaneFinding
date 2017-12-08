@@ -16,7 +16,7 @@ The goals / steps of this project are the following:
 [//]: # (Image References)
 
 [image1]: ./output_images/undistort_output.png "Undistorted"
-[image2]: ./output_images/undist_straight_lines1.jpg "Undistorted test image"
+[image2]: ./output_images/orig_undist.png "Undistorted test image"
 [image3]: ./output_images/orig_warped.png "Road Transformed"
 [image4]: ./output_images/orig_filteredFinal.png "Binary Example"
 [image5]: ./output_images/orig_finalFilteredWarpedBinary.png "Warp Example"
@@ -76,7 +76,7 @@ This resulted in the following source and destination points:
 |:-------------:|:-------------:| 
 | 570, 465      | 200, 0        | 
 | 712, 465      | 1080, 0      |
-| 1070, 689     | 760, 720      |
+| 1070, 689     | 1080, 720      |
 | 238, 689      | 200, 720      |
 
 I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
@@ -86,17 +86,28 @@ I verified that my perspective transform was working as expected by drawing the 
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+I first started off with udacity lecture's window-sliding method for 2D polynomial fit. I added moving average window scheme with tanh function to smooth out leftx_base and rightx_base where the sliding window searches begin.
+The fitting lines function is named `fit_lines()` and the moving average code can be found from line 286~325 in the first code cell of the project ipython notebook. Global variables were used to store previous and moving window arrays.
+An example image that illustrates how this is done is shown below (an actual frame captured from the `project_video.mp4`) 
 
 ![alt text][image6]
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-I did this in lines # through # in my code in `my_other_file.py`
+I did this with two different functions, `get_curvature()` and `get_lanecenter()` located in the first code cell in the project ipython notebook.
+I used the following conversion factors between pixels to meters. `get_lanecenter()` function returns an offset compared to the mid-point between the left and right lanes (negative value if the car is offset to the left of the center midpoint)
+
+```python
+# Define conversions in x and y from pixels space to meters
+ym_per_pix = 30/720 # meters per pixel in y dimension
+xm_per_pix = 3.7/700 # meters per pixel in x dimension
+```
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+I implemented this step using a function I defined called `save_mask()` which returns an image on which the marked lane is superimposed in green color onto the original image.
+This function is located in the first codecell in the project ipython notebook lines 495~517. Using `Minv` acquired from `perspective_transform()` function, unwarped the processed binary warped image.
+Here is an example of my result on a test image:
 
 ![alt text][image7]
 
@@ -114,4 +125,8 @@ Here's a [link to my video result](./project_video.mp4)
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+There were many issues in the beginning. At first I tried only applying S channel of HLS threshold output. This actually worked quite well but as shown in the image below, it failed to process frames in which shadows were introduced or where road colors were suddenly changing. I modified my `process_image()` function so that whenever curvature of the left lane and the right lane differ by more than 2000, the failed frames would be saved into `failed_images` folder so they can be analyzed.
+I loaded this failed image to apply different filtering techniques so that my model can properly clear mostly everything else but the lanes. Also, for sanity check, I used previous frame's fit lines' data whenever the curvature deviation between the left and right exceeded 2000. Even with a combination of multiple filtering techniques, for some frames, it was impossible to get a clear lanes-only view for the `fit_lines()` function to do a successful sliding window polynomial fit that will not differ significantly from the previous frame.
+One improvement I could make is to incorporate the similar moving window with tanh function smoothing to the 3 parameters of fit_lines arrays for the left and right (`left_fit` and `right_fit`)
+Employing this technique should smooth out further on frames where multiple frames consecutively give out erroneous fit lines. (these frames can be seen in my result video with slight blips; but they are not too severe that they deviate from the whole lane marking results)
+  
