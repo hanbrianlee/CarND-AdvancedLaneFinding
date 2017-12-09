@@ -49,6 +49,9 @@ I then used the output `objpoints` and `imgpoints` to compute the camera calibra
 To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
 ![alt text][image2]
 
+Since the camera is calibrated, all I needed to do was to apply mtx and dist acquired from `caliberate_camera()` onto the original image. I created a function called `undistort` which basically takes the image to be undistorted, mtx, and dist to use cv2.undistort.
+The differences between the left and right images may not bee too apparent, but if you look closely, the right one shows the right-most traffic sign closer to the right frame limit. The camera distortion isn't too great that the undistorted image is significantly different, but even this slight difference could result in a bit of curvature measurement difference as well as fitting lines in the following steps.
+
 #### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 
 I used a combination of HLS, HSV, gradient thresholds, white and yellow color extraction to generate a binary image. The steps are laid out in a function called `filter()` in the first code cell in `project.ipynb` and there are several other helper functions within the same code cell that aids the thresholding and combination process. Here's an example of my output for this step. 
